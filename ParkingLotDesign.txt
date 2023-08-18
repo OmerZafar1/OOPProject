@@ -1,0 +1,257 @@
+using System;
+using System.Collections.Generic;
+
+public enum ParkingStatus
+{
+	Empty,
+	Occupied
+}
+
+public class Vehicle
+{
+
+}
+public class ParkingSlot
+{
+	private string slotId;
+	private string slotNumber;
+	private ParkingStatus status;
+	private SlotSize slotSize;
+	private Vehicle vehicle;
+
+	public ParkingSlot(string slotId, string slotNumber, ParkingStatus status, SlotSize slotSize)
+	{
+		this.slotId = slotId;
+		this.slotNumber = slotNumber;
+		this.status = status;
+		this.slotSize = slotSize;
+	}
+
+	public void ParkVehicle(Vehicle vehicle)
+	{
+		if (true)
+		{
+			this.vehicle = vehicle;
+			status = ParkingStatus.Occupied;
+		}
+		else
+		{
+			throw new ArgumentException("Parking not possible for this vehicle.");
+		}
+	}
+
+	public void EmptySlot()
+	{
+		this.vehicle = null;
+		status = ParkingStatus.Empty;
+	}
+}
+
+public class Floor
+{
+	private string floorId;
+	private int floorNumber;
+	private string floorName;
+	private List<ParkingSlot> parkingSlots;
+
+	public Floor(string floorId, int floorNumber, string floorName, List<ParkingSlot> parkingSlots)
+	{
+		this.floorId = floorId;
+		this.floorNumber = floorNumber;
+		this.floorName = floorName;
+		this.parkingSlots = parkingSlots;
+	}
+
+	public void EmptyFloor()
+	{
+		foreach (ParkingSlot slot in parkingSlots)
+		{
+			slot.EmptySlot();
+		}
+	}
+}
+
+public class Parking
+{
+	private string parkingId;
+	private List<Floor> floors;
+	private string parkingName;
+	private string address;
+
+	public Parking(string parkingId, List<Floor> floors, string parkingName, string address)
+	{
+		this.parkingId = parkingId;
+		this.floors = floors;
+		this.parkingName = parkingName;
+		this.address = address;
+	}
+
+	public void EmptyWholeParkingLot()
+	{
+		foreach (Floor floor in floors)
+		{
+			floor.EmptyFloor();
+		}
+	}
+}
+
+public enum VehicleType
+{
+	Bike,
+	Truck,
+	Car,
+	Compact
+}
+
+public interface IVehicle
+{
+	VehicleType GetType();
+}
+
+public class Bike : IVehicle
+{
+	private string bikeNumber;
+
+	public Bike(string bikeNumber)
+	{
+		this.bikeNumber = bikeNumber;
+	}
+
+	public override string ToString()
+	{
+		return "Bike Number = " + bikeNumber;
+	}
+
+	public VehicleType GetType()
+	{
+		return VehicleType.Bike;
+	}
+}
+
+
+public class Truck 
+{
+	// Implementation for Truck class
+}
+
+public enum SlotSize
+{
+	SMALL,
+	MEDIUM,
+	LARGE
+}
+
+public static class SlotSizeExtensions
+{
+	public static List<VehicleType> GetVehicleTypesAllowed(this SlotSize slotSize)
+	{
+		switch (slotSize)
+		{
+			case SlotSize.SMALL:
+				return new List<VehicleType> { VehicleType.Bike, VehicleType.Compact };
+			case SlotSize.MEDIUM:
+				return new List<VehicleType> { VehicleType.Bike, VehicleType.Compact, VehicleType.Car };
+			case SlotSize.LARGE:
+				return new List<VehicleType> { VehicleType.Bike, VehicleType.Compact, VehicleType.Car, VehicleType.Truck };
+			default:
+				throw new ArgumentOutOfRangeException(nameof(slotSize), slotSize, null);
+		}
+	}
+
+	public static bool IsVehicleParkingPossible(this SlotSize slotSize, IVehicle vehicle)
+	{
+		List<VehicleType> vehicleTypesAllowed = slotSize.GetVehicleTypesAllowed();
+		return vehicleTypesAllowed.Contains(vehicle.GetType());
+	}
+}
+
+public class FareController
+{
+	private Dictionary<IVehicle, ParkingDetails> vehicleParkingDetailsMap = new Dictionary<IVehicle, ParkingDetails>();
+
+	public void OnVehicleEntry(IVehicle vehicle, Parking parking)
+	{
+		vehicleParkingDetailsMap[vehicle] = new ParkingDetails(vehicle, parking, DateTime.Now, null);
+	}
+
+	public void OnVehicleExit(IVehicle vehicle)
+	{
+		ParkingDetails parkingDetails = vehicleParkingDetailsMap[vehicle];
+		parkingDetails.ExitTime = DateTime.Now;
+	}
+
+	public decimal GetFare(IVehicle vehicle)
+	{
+		ParkingDetails parkingDetails = vehicleParkingDetailsMap[vehicle];
+		return GetFare(parkingDetails.Parking, parkingDetails.EntryTime, parkingDetails.ExitTime);
+	}
+
+	private decimal GetFare(Parking parking, DateTime entryTime, DateTime exitTime)
+	{
+		return 0m; // Placeholder return value, implement your fare calculation logic here
+	}
+}
+
+public class ParkingDetails
+{
+	public IVehicle Vehicle { get; }
+	public Parking Parking { get; }
+	public DateTime EntryTime { get; }
+	public DateTime? ExitTime { get; set; }
+
+	public ParkingDetails(IVehicle vehicle, Parking parking, DateTime entryTime, DateTime? exitTime)
+	{
+		Vehicle = vehicle;
+		Parking = parking;
+		EntryTime = entryTime;
+		ExitTime = exitTime;
+	}
+}
+class Program
+{
+	static void Main(string[] args)
+	{
+		
+		ParkingSlot slot1 = new ParkingSlot("1", "A1", ParkingStatus.Empty, SlotSize.SMALL);
+		ParkingSlot slot2 = new ParkingSlot("2", "A2", ParkingStatus.Empty, SlotSize.MEDIUM);
+		ParkingSlot slot3 = new ParkingSlot("3", "A3", ParkingStatus.Empty, SlotSize.LARGE);
+
+		// Create a floor with parking slots
+		List<ParkingSlot> parkingSlots = new List<ParkingSlot> { slot1, slot2, slot3 };
+		Floor floor1 = new Floor("1", 1, "Floor 1", parkingSlots);
+
+		// Create a parking with floors
+		List<Floor> floors = new List<Floor> { floor1 };
+		Parking parking = new Parking("1", floors, "Parking Lot", "123 Main St");
+
+		// Create a bike
+		Bike bike = new Bike("B123");
+
+		// Park the bike in the parking slot
+		try
+		{
+			slot1.ParkVehicle(bike);
+			Console.WriteLine("Bike parked in slot 1");
+		}
+		catch (ArgumentException ex)
+		{
+			Console.WriteLine(ex.Message);
+		}
+
+		
+		FareController fareController = new FareController();
+		fareController.OnVehicleEntry(bike, parking);
+
+		
+		
+		fareController.OnVehicleExit(bike);
+
+		
+		decimal fare = fareController.GetFare(bike);
+		Console.WriteLine("Fare for the bike: " + fare);
+
+		
+		parking.EmptyWholeParkingLot();
+		Console.WriteLine("Parking lot emptied");
+	}
+}
